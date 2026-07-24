@@ -1,6 +1,6 @@
 # Creating an Update
 
-- Create a task file in `updates/` called `{your_version}.yaml` (e.g. `3.0.0.yaml`)
+- Create a task file in `updates/` called `{your_version}.yaml` (e.g. `4.0.0.yaml`)
 *(Note that it has to be `.yaml`, not `.yml`, otherwise it won't be found)*
 - Include all tasks in this file
 - Update the version (see below)
