@@ -1,0 +1,47 @@
+# Add CSinParallel
+
+# - name: Add CSinParallel
+#   become: yes
+#   git:
+#     repo: https://github.com/csinparallel/virtual20-code.git
+#     dest: /etc/skel/CSinParallel
+#     clone: yes
+
+# - name: Add CSinParallel to pi user
+#   become: yes
+#   git:
+#     repo: https://github.com/csinparallel/virtual20-code.git
+#     dest: /home/pi/CSinParallel
+#     clone: yes
+
+# bashrc
+
+- name: Find all bashrc files
+  become: yes
+  shell: find /home /etc/skel -name .bashrc
+  register: bashrc
+
+- name: Update check
+  become: yes
+  lineinfile:
+    path: "{{ bashrc_file }}"
+    line: "if [ -e /usr/GACSystems/.updated ]; then cowsay GAC Systems Image has been updated to v$(cat /usr/GACSystems/version); rm /usr/GACSystems/.updated; fi;"
+  with_items: "{{ bashrc.stdout_lines }}"
+  loop_control:
+    loop_var: bashrc_file
+
+
+# Disable Updater service
+- name: Disable Updater.service
+  become: yes
+  systemd:
+    name: Updater.service
+    enabled: no
+
+
+# Version Update
+
+- name: Update version
+  import_tasks: ../update_version.yaml
+  vars:
+    version: '3.0.2'

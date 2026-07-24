@@ -1,0 +1,57 @@
+# Get the OS to the same point as the custom image (https://github.com/maxnz/GAC-Systems-image-gen)
+
+
+# Packages
+
+- name: Upgrade packages
+  become: yes
+  apt:
+    update_cache: yes
+    upgrade: yes
+
+- name: Install necessary packages
+  become: yes
+  apt:
+    name: [isc-dhcp-server, vim, emacs, cowsay, sl]
+
+
+
+# Add gac-systems-image 
+
+- name: Add GACSystems directory
+  become: yes
+  file:
+    path: /usr/GACSystems
+    state: directory
+    mode: '0777'
+
+- name: Add gac-systems-image
+  import_tasks: ../update_gac-systems-image.yaml
+  vars:
+    version: '3.0.0'
+
+- name: Install gac-systems-image
+  become: yes
+  file:
+    src: /usr/GACSystems/gac-systems-image.bash
+    path: /usr/bin/gac-systems-image
+    state: link
+
+
+
+# Systemd service
+
+- name: Create Updater service
+  become: yes
+  copy:
+    src: files/3.0.0/Updater.service
+    dest: /lib/systemd/system/Updater.service
+
+
+
+# Version Update
+
+- name: Update version
+  import_tasks: ../update_version.yaml
+  vars:
+    version: '3.0.0'

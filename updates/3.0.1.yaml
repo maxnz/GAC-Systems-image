@@ -1,0 +1,133 @@
+# Set static IP
+
+- name: Set up static IP
+  become: yes
+  lineinfile:
+    path: /etc/dhcpcd.conf
+    line: |
+      interface eth0
+      metric 302
+      static ip_address=172.27.0.254
+      static routers=172.27.0.1
+      static domain_name_servers=172.27.0.1
+      nolink
+
+      interface wlan0
+      metric 202
+
+- name: Restart dhcpcd
+  become: yes
+  systemd:
+    name: dhcpcd.service
+    state: restarted
+
+- name: Wait for DHCP to fail
+  wait_for:
+    timeout: 20
+
+- name: Restart dhcpcd
+  become: yes
+  systemd:
+    name: dhcpcd.service
+    state: restarted
+
+
+# Configure DHCP server
+
+- name: Add eth0 to DHCP server
+  become: yes
+  replace:
+    path: /etc/default/isc-dhcp-server
+    regexp: "INTERFACESv4=\"\""
+    replace: "INTERFACESv4=\"eth0\""
+
+- name: Configure DHCP server
+  become: yes
+  lineinfile:
+    path: /etc/dhcp/dhcpd.conf
+    line: "option domain-name \"example.org\";"
+    state: absent
+
+- name: Configure DHCP server
+  become: yes
+  lineinfile:
+    path: /etc/dhcp/dhcpd.conf
+    line: "option domain-name-servers ns1.example.org, ns2.example.org;"
+    state: absent
+
+- name: Configure DHCP server
+  become: yes
+  lineinfile:
+    path: /etc/dhcp/dhcpd.conf
+    line: |
+      default-lease-time 600;
+      max-lease-time 7200;
+      option subnet-mask 255.255.255.0;
+      option broadcast-address 172.27.0.255;
+      option routers 172.27.0.254;
+      option domain-name-servers 172.27.0.1;
+
+      subnet 172.27.0.0 netmask 255.255.255.0 {
+        range 172.27.0.2 172.27.0.253;
+
+- name: Configure DHCP server
+  become: yes
+  lineinfile:
+    path: /etc/dhcp/dhcpd.conf
+    line: "}"
+
+- name: Wait for DHCP
+  wait_for:
+    timeout: 20
+
+- name: Start DHCP server
+  become: yes
+  systemd:
+    name: isc-dhcp-server.service
+
+- name: Wait for DHCP server
+  wait_for:
+    path: /run/systemd/generator.late/isc-dhcp-server.service
+    delay: 10
+
+- name: Configure DHCP server service
+  become: yes
+  copy:
+    src: /run/systemd/generator.late/isc-dhcp-server.service
+    dest: /etc/systemd/system/isc-dhcp-server.service
+
+- name: Configure DHCP server service
+  become: yes
+  replace:
+    path: /etc/systemd/system/isc-dhcp-server.service
+    regexp: "Restart=no"
+    replace: "Restart=on-failure"
+
+- name: Configure DHCP server service
+  become: yes
+  lineinfile:
+    path: /etc/systemd/system/isc-dhcp-server.service
+    line: "RestartSec=5"
+    insertafter: "Restart=on-failure"
+
+- name: Configure DHCP server service
+  become: yes
+  lineinfile:
+    path: /etc/systemd/system/isc-dhcp-server.service
+    line: "[Install]\nWantedBy=multi-user.target"
+
+- name: Enable dhcp server
+  become: yes
+  shell: systemctl enable isc-dhcp-server
+
+- name: Start dhcp server
+  become: yes
+  shell: systemctl start isc-dhcp-server
+
+
+# Version Update
+
+- name: Update version
+  import_tasks: ../update_version.yaml
+  vars:
+    version: '3.0.1'

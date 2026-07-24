@@ -1,0 +1,16 @@
+# Task file for updating the gac-systems-image.bash file
+# Usage:
+# Create a gac-systems-image.bash file in files/{your_version}/
+# Add to your update tasks:
+# - name: Update gac-systems-image
+#   import_tasks: ../update_gac-systems-image.yaml
+#   vars:
+#     version: 'your_version'
+
+- name: Update gac-systems-image
+  become: yes
+  copy: 
+    src: files/{{ version }}/gac-systems-image.bash
+    dest: /usr/GACSystems/gac-systems-image.bash
+    owner: root
+    mode: '0777'
