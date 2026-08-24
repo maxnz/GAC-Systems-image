@@ -137,6 +137,8 @@ change_boot_user() {
         return
     fi
 
+    USER="$1"
+
     # Check that a username is specified, otherwise ask until provided one
     while [ -z $USER ]
     do
