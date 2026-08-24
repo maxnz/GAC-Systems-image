@@ -150,19 +150,16 @@ change_boot_user() {
     ## Otherwise the desktop will not load and the user select screen will be shown
     if [[ -d /home/$USER ]]
     then
-        # Taken from raspi-config's do_boot_behaviour method
-        (https://github.com/RPi-Distro/raspi-config/blob/master/raspi-config)
+        # Taken from raspi-config's do_boot_behaviour method (https://github.com/RPi-Distro/raspi-config/blob/master/raspi-config)
         systemctl set-default graphical.target
 
-        ln -fs /lib/systemd/system/getty@.service
-        /etc/systemd/system/getty.target.wants/getty@tty1.service
+        ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
         cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty --autologin $USER --noclear %I \$TERM
 EOF
-        sed /etc/lightdm/lightdm.conf -i -e
-        "s/^\(#\|\)autologin-user=.*/autologin-user=$USER/"
+        sed /etc/lightdm/lightdm.conf -i -e "s/^\(#\|\)autologin-user=.*/autologin-user=$USER/"
         echo "SUCCESS: Will boot to $USER's desktop on next boot"
     else
         echo -e "\e[31mERROR: Specified user does not have a home directory\e[0m"
