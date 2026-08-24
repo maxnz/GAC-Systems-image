@@ -1,0 +1,11 @@
+- name: Add gac-systems-image
+  import_tasks: ../update_gac-systems-image.yaml
+  vars:
+    version: '4.0.3'
+
+# Version Update
+
+- name: Update version
+  import_tasks: ../update_version.yaml
+  vars:
+    version: '4.0.3'
