@@ -184,6 +184,11 @@ do
             echo
             exit 0
             ;;
+        change-boot-user)
+            shift
+            change_boot_user
+            exit 0
+            ;;
         change-owner)
             shift
             change_owner
