@@ -1,6 +1,19 @@
 # Set static IP
 
 - name: Set up static IP
+  nmcli:
+    conn-name: 
+    autoconnect: yes
+    gw4: 172.27.0.1
+    ifname: eth0
+    method4: manual
+    ip4: 172.27.0.254
+    dns4:
+      - 172.27.0.1
+    
+
+
+- name: Set up static IP
   become: yes
   lineinfile:
     path: /etc/dhcpcd.conf
@@ -130,4 +143,4 @@
 - name: Update version
   import_tasks: ../update_version.yaml
   vars:
-    version: '3.0.1'
+    version: '4.0.1'

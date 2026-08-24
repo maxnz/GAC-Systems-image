@@ -44,4 +44,4 @@
 - name: Update version
   import_tasks: ../update_version.yaml
   vars:
-    version: '3.0.2'
+    version: '4.0.2'
