@@ -23,9 +23,18 @@
 - name: Add CSinParallel to s1-cluster user
   become: yes
   git:
-    repo: https://github.com/csinparallel/virtual20-code.git
+    repo: https://github.com/csinparallel/virtual20-code.git # TODO determine exact path from old image
     dest: /s1-cluster/CSinParallel
     clone: yes
+    accept_newhostkey: yes
+
+- name: Change CSinParallel permissions
+  become: yes
+  file:
+    path: /s1-cluster/CSinParallel
+    owner: s1-cluster
+    group: s1-cluster
+    recurse: true
 
 # Version Update
 
