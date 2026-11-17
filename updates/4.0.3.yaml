@@ -1,7 +1,31 @@
-- name: Add gac-systems-image
-  import_tasks: ../update_gac-systems-image.yaml
-  vars:
-    version: '4.0.3'
+# - name: Add gac-systems-image
+#   import_tasks: ../update_gac-systems-image.yaml
+#   vars:
+#     version: '4.0.3'
+
+- name: Add s1-cluster user
+  become: yes
+  user:
+    name: s1-cluster
+    uid: 1100
+    create_home: false
+    home: /s1-cluster
+    shell: /bin/bash
+
+- name: Add /s1-cluster directory
+  become: yes
+  file:
+    path: /s1-cluster
+    state: directory
+    owner: s1-cluster
+    group: s1-cluster
+
+- name: Add CSinParallel to s1-cluster user
+  become: yes
+  git:
+    repo: https://github.com/csinparallel/virtual20-code.git
+    dest: /s1-cluster/CSinParallel
+    clone: yes
 
 # Version Update
 
