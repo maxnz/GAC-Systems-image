@@ -1,8 +1,3 @@
-# - name: Add gac-systems-image
-#   import_tasks: ../update_gac-systems-image.yaml
-#   vars:
-#     version: '4.0.3'
-
 - name: Add s1-cluster user
   become: yes
   user:

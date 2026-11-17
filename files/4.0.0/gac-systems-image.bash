@@ -3,7 +3,6 @@
 # gac-systems-image: a tool for managing the GAC Systems Image
 # Created by Max Narvaez
 
-IMAGEVER=`cat /usr/GACSystems/version`
 BRANCH=
 
 show_help() {
@@ -19,8 +18,10 @@ show_help() {
     echo "info              show information about this Pi"
     echo "update            check for image updates"
     echo
+    echo "change-boot-user  change which user the pi will boot the desktop to"
+    echo "change-owner      change the contents of /etc/owner"
+    echo
     echo "git-fsck          check all git repositories for errors"
-    echo "reset-wallpaper   resets the wallpaper to default (temple.jpg)"
     exit 0
 }
 
@@ -30,7 +31,7 @@ show_update_help() {
     echo "Update your GAC Systems image"
     echo
     echo "Usage: gac-systems-image update [-h] [--branch BRANCH]" 
-    echo "                         [--version-override VERSION]"
+    echo "                                [--version-override VERSION]"
     echo "Options:"
     echo "-h                Show this help message"
     echo "-b BRANCH, --branch BRANCH"
@@ -46,18 +47,18 @@ missing_argument() {
 }
 
 info() {
-    SERIAL=`cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2`
-    IPv4=`ifconfig wlan0 | grep "inet " | sed 's/  \+/ /g' | cut -d ' ' -f 3`
-    MAC=`ifconfig wlan0 | grep ether | sed 's/  \+/ /g' | cut -d ' ' -f 3`
-    SDSERIAL=`cat /sys/block/mmcblk0/device/cid`
-    HARDREV=`cat /proc/cpuinfo | grep Revision | cut -d ' ' -f 2`
+    # Load our information functions
+    source /usr/GACSystems/get-info.bash
 
-    echo "Image Version:        $IMAGEVER"
-    echo "Hardware Revision:    $HARDREV"
-    echo "Pi Serial Number:     $SERIAL"
-    echo "SD Serial Number:     $SDSERIAL"
-    echo "WiFi IP:              $IPv4"
-    echo "WiFi MAC:             $MAC"
+    echo "Image Version:        $(get_image_version)"
+    echo "Hardware Revision:    $(get_pi_rev)"
+    echo "Pi Serial Number:     $(get_pi_serial)"
+    echo "SD Serial Number:     $(get_sd_serial)"
+    echo "WiFi IP:              $(get_ip wlan0)"
+    echo "WiFi MAC:             $(get_mac wlan0)"
+    echo "Ethernet IP:          $(get_ip eth0)"
+    echo "Ethernet MAC:         $(get_mac eth0)"
+    echo "Owner:                $(get_owner)"
 }
 
 git_fsck() {
@@ -82,16 +83,77 @@ update() {
     do
         if [ $tries -gt 3 ]
         then
-            /usr/bin/logger -t gac-systems-image "Could not connect to internet"
+            echo "Could not connect to internet"
             exit 1
         fi
         sleep 10
         let "tries++"
     done
 
+    source /usr/GACSystems/get-info.bash
+
     /usr/bin/ansible-pull \
     -U https://github.com/maxnz/GAC-Systems-image.git \
-    -e imgVersion=$IMAGEVER -C ${BRANCH:-main}
+    -e imgVersion=${IMAGEVER:-$(cat /usr/GACSystems/version)} -C ${BRANCH:-main}
+}
+
+change_boot_user() {
+    if [ "$EUID" -ne 0 ]
+    then
+        echo "Please run as sudo gac-systems-image change-boot-user"
+        return
+    fi
+
+    #put agument in username
+    USER=$1
+
+    # Check that a username is specified, otherwise ask until provided one
+    while [ -z $USER ]
+    do
+        echo -n "Enter your username: "
+        read USER
+    done
+
+    # Check that user has a home directory
+    ## Otherwise the desktop will not load and the user select screen will be shown
+    if [[ -d /home/$USER ]]
+    then
+        # Taken from raspi-config's do_boot_behaviour method (https://github.com/RPi-Distro/raspi-config/blob/master/raspi-config)
+        systemctl set-default graphical.target
+
+        ln -fs /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+        cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $USER --noclear %I \$TERM
+EOF
+        sed /etc/lightdm/lightdm.conf -i -e "s/^\(#\|\)autologin-user=.*/autologin-user=$USER/"
+        echo "SUCCESS: Will boot to $USER's desktop on next boot"
+    else
+        echo -e "\e[31mERROR: Specified user does not have a home directory\e[0m"
+    fi
+}
+
+change_owner() {
+    username=$1
+
+    if [ -z "$username" ]
+    then
+        echo "Please enter a username"
+        exit 1
+    elif [[ "$username" == "None" ]]
+    then
+        echo "Nice try, but that's not a username"
+        exit 1
+    elif [[ "$username" == "username" ]]
+    then
+        echo "Nice try, but we want your username, not the literal string 'username'"
+        exit 1
+    fi
+
+    echo $username > /etc/owner
+
+    echo "Owner has been set to $username"
 }
 
 if test $# -eq 0
@@ -157,10 +219,14 @@ do
             git_fsck
             exit $GITCHK
             ;;
-        reset-wallpaper)
+        change-boot-user)
             shift
-            export DISPLAY=:0.0
-            pcmanfm --set-wallpaper /usr/share/rpd-wallpaper/temple.jpg
+            change_boot_user $1
+            exit 0
+            ;;
+        change-owner)
+            shift
+            change_owner $1
             exit 0
             ;;
         *)
@@ -169,4 +235,3 @@ do
     esac
     exit 0
 done
-
