@@ -1,0 +1,60 @@
+- name: Create s1-cluster .ssh
+  become: yes
+  file:
+    path: /s1-cluster/.ssh
+    state: directory
+    mode: 700
+    owner: s1-cluster
+    group: s1-cluster
+
+- name: Configure s1-cluster SSH
+  become: yes
+  blockinfile:
+    path: /s1-cluster/.ssh/config
+    create: yes
+    owner: s1-cluster
+    group: s1-cluster
+    mode: 644
+    mark: "# {mark} ANSIBLE MANAGED BLOCK CONFIG FILE"
+    block: |
+      Host 172.27.1.*
+        IdentityFile ~/.ssh/pi_cluster_id_rsa
+        StrictHostKeyChecking no
+      Host head
+        HostName 172.27.1.2
+        IdentityFile ~/.ssh/pi_cluster_id_rsa
+        StrictHostKeyChecking no
+
+- name: Configure s1-cluster SSH authorized_keys
+  become: yes
+  copy:
+    src: files/4.0.4/authorized_keys
+    dest: /s1-cluster/.ssh/authorized_keys
+    owner: s1-cluster
+    group: s1-cluster
+    mode: 600
+
+- name: Configure s1-cluster SSH pi_cluster_id_rsa
+  become: yes
+  copy:
+    src: files/4.0.4/pi_cluster_id_rsa
+    dest: /s1-cluster/.ssh/pi_cluster_id_rsa
+    owner: s1-cluster
+    group: s1-cluster
+    mode: 600
+
+- name: Configure s1-cluster SSH pi_cluster_id_rsa.pub
+  become: yes
+  copy:
+    src: files/4.0.4/pi_cluster_id_rsa.pub
+    dest: /s1-cluster/.ssh/pi_cluster_id_rsa.pub
+    owner: s1-cluster
+    group: s1-cluster
+    mode: 644
+
+# Version Update
+
+- name: Update version
+  import_tasks: ../update_version.yaml
+  vars:
+    version: '4.0.4'
