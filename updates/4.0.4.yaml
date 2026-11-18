@@ -15,7 +15,7 @@
     owner: s1-cluster
     group: s1-cluster
     mode: 644
-    mark: "# {mark} ANSIBLE MANAGED BLOCK CONFIG FILE"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK CONFIG FILE"
     block: |
       Host 172.27.1.*
         IdentityFile ~/.ssh/pi_cluster_id_rsa
