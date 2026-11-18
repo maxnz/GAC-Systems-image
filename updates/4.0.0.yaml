@@ -28,7 +28,7 @@
 - name: Add gac-systems-image
   import_tasks: ../update_gac-systems-image.yaml
   vars:
-    version: '3.0.0'
+    version: '4.0.0'
 
 - name: Install gac-systems-image
   become: yes
@@ -44,7 +44,7 @@
 - name: Create Updater service
   become: yes
   copy:
-    src: files/3.0.0/Updater.service
+    src: files/4.0.0/Updater.service
     dest: /lib/systemd/system/Updater.service
 
 
@@ -54,4 +54,4 @@
 - name: Update version
   import_tasks: ../update_version.yaml
   vars:
-    version: '3.0.0'
+    version: '4.0.0'

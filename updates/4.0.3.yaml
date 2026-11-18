@@ -1,0 +1,30 @@
+- name: Add s1-cluster user
+  become: yes
+  user:
+    name: s1-cluster
+    uid: 1100
+    home: /s1-cluster
+    shell: /bin/bash
+
+- name: Add CSinParallel to s1-cluster user
+  become: yes
+  git:
+    repo: https://github.com/csinparallel/virtual20-code.git
+    dest: /s1-cluster/CSinParallel
+    clone: yes
+    accept_newhostkey: yes
+
+- name: Change CSinParallel permissions
+  become: yes
+  file:
+    path: /s1-cluster/CSinParallel
+    owner: s1-cluster
+    group: s1-cluster
+    recurse: true
+
+# Version Update
+
+- name: Update version
+  import_tasks: ../update_version.yaml
+  vars:
+    version: '4.0.3'
